@@ -129,7 +129,7 @@ with col1:
                     # แสดง GIF การเติมน้ำลงในแก้วที่แตกต่างกันไปตามผลไม้
                     gif_path = os.path.join(image_folder, juice_gifs[juice])
                     if os.path.exists(gif_path):
-                        empty_glass_placeholder.image(gif_path, caption=f"Dispensing {juice_display_name[juice]} Juice")
+                        empty_glass_placeholder.image(gif_path, caption=f"Dispensing {juice} Juice")
 
                     # รอจนกว่าจะเห็นอนิเมชั่น
                     time.sleep(4)
@@ -138,7 +138,7 @@ with col1:
                     empty_glass_placeholder.empty()
                     full_image_path = os.path.join(image_folder, juice_full[juice])
                     if os.path.exists(full_image_path):
-                        empty_glass_placeholder.image(full_image_path, caption=f"Done dispensing {juice_display_name[juice]} juice!")
+                        empty_glass_placeholder.image(full_image_path, caption=f"Done dispensing {juice} juice!")
 
                     # ส่งคำขอไปยัง FastAPI เพื่อเพิ่มสถิติ
                     update_juice_click(juice)
