@@ -127,7 +127,7 @@ uvicorn backend.main:app --host 0.0.0.0 --port 8000 --reload
 
 Available endpoints:
 - `GET /hello` - Simple hello world message
-- `GET /count` - Increment and return a counter value
+- `GET /count` - Incremstreamlit run frontend/streamlit_app.pyent and return a counter value
 
 ### Running the Streamlit Frontend
 

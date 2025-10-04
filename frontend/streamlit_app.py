@@ -1,146 +1,155 @@
-import os
-import requests
 import streamlit as st
-import pandas as pd
-from typing import List, Dict, Any
+from PIL import Image
+import os
+import time
+import requests
 
-st.set_page_config(page_title="Device Management", page_icon="📱", layout="wide")
-st.title("📱 Device Management System")
+# ตั้งค่า UI
+st.set_page_config(page_title="Fruit Juice Dispenser", page_icon="🍹", layout="wide")
+st.title("🍹 Fruit Juice Dispenser")
 
-backend_url = os.getenv("BACKEND_URL", "http://localhost:8000")
-
-# Helper functions for API calls
-def get_devices() -> List[Dict[str, Any]]:
-    """Fetch all devices from the backend API."""
-    try:
-        response = requests.get(f"{backend_url}/devices/")
-        response.raise_for_status()
-        return response.json()
-    except requests.exceptions.RequestException as e:
-        st.error(f"Error fetching devices: {str(e)}")
-        return []
-
-def create_device(name: str, model: str, location: str = None) -> bool:
-    """Create a new device via the backend API."""
-    try:
-        device_data = {
-            "name": name,
-            "model": model,
-            "location": location if location else None
-        }
-        response = requests.post(f"{backend_url}/devices/", json=device_data)
-        response.raise_for_status()
-        return True
-    except requests.exceptions.RequestException as e:
-        st.error(f"Error creating device: {str(e)}")
-        return False
-
-def delete_device(device_id: int) -> bool:
-    """Delete a device via the backend API."""
-    try:
-        response = requests.delete(f"{backend_url}/devices/{device_id}")
-        response.raise_for_status()
-        return True
-    except requests.exceptions.RequestException as e:
-        st.error(f"Error deleting device: {str(e)}")
-        return False
-
-# Main app layout
+# สร้างคอลัมน์สำหรับ Layout
 col1, col2 = st.columns([2, 1])
 
-with col1:
-    st.header("📋 Device List")
-    
-    # Refresh button
-    if st.button("🔄 Refresh List", type="secondary"):
-        st.rerun()
-    
-    # Fetch and display devices
-    devices = get_devices()
-    
-    if devices:
-        # Convert to DataFrame for better display
-        df = pd.DataFrame(devices)
-        
-        # Display devices in a table with action buttons
-        for idx, device in enumerate(devices):
-            with st.container():
-                device_col1, device_col2, device_col3, device_col4, device_col5 = st.columns([1, 2, 2, 2, 1])
-                
-                with device_col1:
-                    st.write(f"**ID:** {device['id']}")
-                
-                with device_col2:
-                    st.write(f"**Name:** {device['name']}")
-                
-                with device_col3:
-                    st.write(f"**Model:** {device['model']}")
-                
-                with device_col4:
-                    location = device.get('location', 'Not specified')
-                    st.write(f"**Location:** {location}")
-                
-                with device_col5:
-                    # Direct delete button
-                    if st.button(f"🗑️ Delete", key=f"delete_{device['id']}", type="secondary"):
-                        if delete_device(device['id']):
-                            st.success(f"Device '{device['name']}' deleted successfully!")
-                            st.rerun()
-                
-                st.divider()
+# เส้นทางไปยังโฟลเดอร์ที่เก็บภาพ
+image_folder = "frontend/image"  # ไฟล์ทั้งหมดอยู่ในโฟลเดอร์นี้
+
+juice_options = ['starfruit', 'dragonfruit', 'mangosteen', 'melon', 'lemon', 'watermelon']
+
+# Mapping ชื่อที่แสดงกับชื่อที่เก็บข้อมูล
+juice_display_name = {
+    'starfruit': 'ดาวน้อยน่าอร่อยจังเลย',
+    'dragonfruit': 'แก้วมังกรแต่ไม่มังใจ',
+    'mangosteen': 'มังคุเทศ',
+    'melon': 'เมล่อนซ่อนใจ',
+    'lemon': 'เลม่อนแสนซน',
+    'watermelon': 'แตงโม แตงโม แตงโม'
+}
+
+juice_images = {
+    'starfruit': 'starfruit.png',
+    'dragonfruit': 'dragonfruit.png',
+    'mangosteen': 'mangosteen.png',
+    'melon': 'melon.png',
+    'lemon': 'lemon.png',
+    'watermelon': 'watermelon.png'
+}
+
+juice_gifs = {
+    'starfruit': 'starfruit_glass.gif',
+    'dragonfruit': 'dragonfruit_glass.gif',
+    'mangosteen': 'mangosteen_glass.gif',
+    'melon': 'melon_glass.gif',
+    'lemon': 'lemon_glass.gif',
+    'watermelon': 'watermelon_glass.gif'
+}
+
+juice_full = {
+    'starfruit': 'starfruit_full.png',
+    'dragonfruit': 'dragonfruit_full.png',
+    'mangosteen': 'mangosteen_full.png',
+    'melon': 'melon_full.png',
+    'lemon': 'lemon_full.png',
+    'watermelon': 'watermelon_full.png'
+}
+
+# ใช้ placeholder เพื่อแสดงข้อความใน col2 (แก้วเปล่า)
+empty_glass_placeholder = col2.empty()
+
+# ฟังก์ชันสำหรับโหลดภาพจากไฟล์
+def load_image(image_path):
+    if os.path.exists(image_path):
+        return Image.open(image_path)
     else:
-        st.info("No devices found. Add your first device using the form on the right!")
+        st.warning(f"Image not found: {image_path}")
+        return None
 
-with col2:
-    st.header("➕ Add New Device")
-    
-    with st.form("add_device_form"):
-        st.subheader("Device Information")
-        
-        device_name = st.text_input(
-            "Device Name *", 
-            placeholder="e.g., Temperature Sensor #1, Smart Thermostat",
-            help="Enter a descriptive name for the device"
-        )
-        
-        device_model = st.text_input(
-            "Device Model *", 
-            placeholder="e.g., DHT22, ESP32-DevKit, Arduino Uno",
-            help="Enter the model number or identifier"
-        )
-        
-        device_location = st.text_input(
-            "Location (Optional)", 
-            placeholder="e.g., Living Room, Server Room, Greenhouse",
-            help="Where is this device located?"
-        )
-        
-        submitted = st.form_submit_button("🚀 Add Device", type="primary", use_container_width=True)
-        
-        if submitted:
-            if not device_name.strip():
-                st.error("Device name is required!")
-            elif not device_model.strip():
-                st.error("Device model is required!")
-            else:
-                if create_device(device_name.strip(), device_model.strip(), device_location.strip() or None):
-                    st.success(f"Device '{device_name}' added successfully!")
-                    st.rerun()
+# ฟังก์ชันเชื่อมต่อกับ FastAPI เพื่อเพิ่มสถิติ
+def update_juice_click(juice_type):
+    url = f"http://127.0.0.1:8000/juices/{juice_type}/click"
+    response = requests.post(url)
+    return response.json()
 
-# Footer with API status
-st.divider()
-col1, col2 = st.columns([1, 1])
+# ฟังก์ชันเพื่อดึงข้อมูลสถิติจาก FastAPI
+def get_juice_stats():
+    url = "http://127.0.0.1:8000/juices/"
+    response = requests.get(url)
+    return response.json()
 
+# การแสดงสถิติการกดปุ่ม
+st.sidebar.header("Juice Stats")
+
+# ฟังก์ชันที่แสดงข้อมูลสถิติ
+def get_sidebar_stats_markdown():
+    juice_stats = get_juice_stats()
+    sorted_stats = sorted(juice_stats, key=lambda x: x['click_count'], reverse=True)
+
+    md = ""
+    for stat in sorted_stats:
+        name = stat['name'].capitalize()
+        count = stat['click_count']
+        md += f"🥤 **{name} Juice**: {count} clicks\n\n"  # เอา backticks ออก
+    return md
+
+sidebar_stats_container = st.sidebar.empty()
+sidebar_stats_container.markdown(get_sidebar_stats_markdown())
+
+# การเลือกน้ำผลไม้
 with col1:
-    st.caption(f"Backend URL: {backend_url}")
+    st.header("Choose Your Juice")
 
-with col2:
-    # Check backend connectivity
-    try:
-        response = requests.get(f"{backend_url}/hello", timeout=2)
-        if response.status_code == 200:
-            st.caption("🟢 Backend Connected")
-        else:
-            st.caption("🟡 Backend Issues")
-    except:
-        st.caption("🔴 Backend Disconnected")
+    # แสดงแก้วเปล่าใน col2
+    empty_glass_path = os.path.join(image_folder, 'glass.png')
+    glass_img = load_image(empty_glass_path)
+    if glass_img:
+        empty_glass_placeholder.image(glass_img, caption="Empty Glass")
+
+    # การเลือกน้ำผลไม้
+    for i in range(0, len(juice_options), 3):
+        juice_col1, juice_col2, juice_col3 = st.columns([1, 1, 1])
+        for j, juice in enumerate(juice_options[i:i+3]):
+            with [juice_col1, juice_col2, juice_col3][j]:
+                image_path = os.path.join(image_folder, juice_images[juice])
+
+                # โหลดและแสดงภาพน้ำผลไม้
+                img = load_image(image_path)
+                if img:
+                    st.image(img, caption=f"{juice_display_name[juice]}", width=140)
+
+                if st.button(f"🥤 Dispense {juice_display_name[juice]}"):
+
+                    # แสดงภาพแก้วเปล่าใน col2
+                    glass_img = load_image(empty_glass_path)
+                    if glass_img:
+                        empty_glass_placeholder.image(glass_img, caption="Empty Glass")
+
+                    # รอ 
+                    time.sleep(1)
+
+                    # แสดง GIF การเติมน้ำลงในแก้วที่แตกต่างกันไปตามผลไม้
+                    gif_path = os.path.join(image_folder, juice_gifs[juice])
+                    if os.path.exists(gif_path):
+                        empty_glass_placeholder.image(gif_path, caption=f"Dispensing {juice_display_name[juice]} Juice")
+
+                    # รอจนกว่าจะเห็นอนิเมชั่น
+                    time.sleep(4)
+
+                    # แสดงข้อความ "Done" 
+                    empty_glass_placeholder.empty()
+                    full_image_path = os.path.join(image_folder, juice_full[juice])
+                    if os.path.exists(full_image_path):
+                        empty_glass_placeholder.image(full_image_path, caption=f"Done dispensing {juice_display_name[juice]} juice!")
+
+                    # ส่งคำขอไปยัง FastAPI เพื่อเพิ่มสถิติ
+                    update_juice_click(juice)
+
+                    # รีเฟรชข้อมูลสถิติใน sidebar
+                    sidebar_stats_container.markdown(get_sidebar_stats_markdown())
+
+                    # ลบข้อความออกหลังจาก 1 วินาที
+                    time.sleep(2)
+
+                    # แสดงแก้วเปล่าอีกครั้งหลังจากทำการเสร็จสิ้น
+                    glass_img = load_image(empty_glass_path)
+                    if glass_img:
+                        empty_glass_placeholder.image(glass_img, caption="Empty Glass")
