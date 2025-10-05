@@ -6,8 +6,8 @@ import seaborn as sns
 import time
 
 # ตั้งค่า UI
-st.set_page_config(page_title="Database - Juice Dispenser", page_icon="🍹", layout="wide")
-st.title("🍹 Fruit Juice Database")
+st.set_page_config(page_title="Dashboard - Juice Dispenser", page_icon="🍹", layout="wide")
+st.title("🍹 Fruit Juice Dashboard")
 
 # ฟังก์ชันเพื่อดึงข้อมูลจาก FastAPI
 def get_juice_stats():
